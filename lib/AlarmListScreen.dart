@@ -1,9 +1,21 @@
-import 'package:arise/AlarmInstance.dart';
-import 'package:arise/SettingsScreen.dart';
-
-import 'EditAlarm.dart';
+import 'package:arise/LightTask.dart';
+import 'package:arise/MathTask.dart';
+import 'package:arise/MicTask.dart';
+import 'package:arise/RingingAlarm.dart';
+import 'package:arise/color_schemes.g.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:arise/PointsScreen.dart';
+
+//import 'package:timezone/data/latest.dart' as tz;
+
+import 'package:arise/AlarmDatabase.dart';
+import 'SettingsScreen.dart';
+import 'package:intl/intl.dart';
+import 'EditAlarm.dart';
 import 'package:flutter/material.dart';
+
+import 'data.dart';
 
 class AlarmListScreenWidget extends StatefulWidget {
   const AlarmListScreenWidget({Key? key}) : super(key: key);
@@ -14,29 +26,36 @@ class AlarmListScreenWidget extends StatefulWidget {
 
 class _AlarmListScreenWidgetState extends State<AlarmListScreenWidget> {
   @override
+  void initState() {
+    super.initState();
+    //tz.initializeTimeZones();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    Alarm tempAlarm;
     return Scaffold(
+      backgroundColor: const Color(0xFF1A1C19),
       //backgroundColor: const Color.fromARGB(1, 26, 28, 25),
       appBar: AppBar(
-        title: const Text('Alarms'),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-      ),
+          title: const Text('Alarms'),
+          centerTitle: true,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(15),
+                  bottomLeft: Radius.circular(15)))
+          //backgroundColor: Colors.transparent,
+          ),
       drawer: Drawer(
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
                 bottomRight: Radius.circular(25),
-                topRight: Radius.circular(25)
-            )
-        ),
+                topRight: Radius.circular(25))),
         backgroundColor: Theme.of(context)
             .colorScheme
-            .secondaryContainer, //const Color.fromRGBO(25, 28, 26, 1),
-        // Add a ListView to the drawer. This ensures the user can scroll
-        // through the options in the drawer if there isn't enough vertical
-        // space to fit everything.
+            .secondaryContainer,
         child: ListView(
-          // Important: Remove any padding from the ListView.
+
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(child: Text('Menu')),
@@ -44,40 +63,190 @@ class _AlarmListScreenWidgetState extends State<AlarmListScreenWidget> {
               leading: const Icon(Icons.grade),
               title: const Text('Points & Stats'),
               onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
-                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PointsWidget()));
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () => {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingsScreen()))
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SettingsScreen()))
               },
             ),
+            ListTile(
+              title: const Text('Light Sensor Task'),
+              onTap: () => {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) => LightTask()))
+              },
+            ),
+            ListTile(
+              title: const Text('Mic Task'),
+              onTap: () => {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) => MicTask()))
+              },
+            ),
+            ListTile(
+              title: const Text('Math Task'),
+              onTap: () => {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => MathTask()))
+              },
+            ),
+            const Divider(),
+            ListTile(title: const Text('Test the Alarm'),
+              onTap: () => {
+              Navigator.of(context).pop(),
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => RingingAlarmWidget())
+                )
+              },)
           ],
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: List.generate(5, (index) {
-          return AlarmInstanceWidget('Alarm $index', index, index, 'Once', 'None', true);
-        }),
+      body: Center(
+
+        child: FutureBuilder<List<Alarm>>(
+
+            future: DatabaseHelper.instance.getAlarms(),
+            builder: (BuildContext context,
+                AsyncSnapshot<List<Alarm>> snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: Text('Loading...'));
+              }
+              return snapshot.data!.isEmpty
+                  ? const Center(
+                  child: Text('No alarms!'))
+                  : ListView(
+                children: snapshot.data!.map((alarm) {
+                  return GestureDetector(
+                      onTap: () => {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(
+                        builder: (context) => EditAlarmWidget(alarm)))
+                        .then((value) {
+                      setState(() {
+                        //refresh the page content
+                      });
+                    })
+                  },
+
+                    child: Dismissible(
+                      key: UniqueKey(),
+                      onDismissed: (direction) {
+                        setState(() {
+                          DatabaseHelper.instance.remove(alarm.id!);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Alarm dismissed')));
+                      },
+                      secondaryBackground: Container(
+                        margin: const EdgeInsets.only(right: 20),
+                        alignment: Alignment.centerRight,
+                        child: const Icon(Icons.delete),
+                      ),
+                      background: Container(
+                          margin: const EdgeInsets.only(left: 20),
+                          alignment: Alignment.centerLeft,
+                          child: const Icon(Icons.delete)),
+                      child: Container(
+                          decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xff636c77), Color(0x00636c77)],
+                                // begin: Alignment.topLeft,
+                                // end: Alignment.bottomRight,
+                                // colors: colorUpdate(alarm.difficulty)
+                             ),
+                              borderRadius: BorderRadius.circular(23)),
+                          padding: const EdgeInsets.only(left: 25, right: 25, top: 10, bottom: 10),
+                          margin: const EdgeInsets.all(12),
+                          width: MediaQuery.of(context).size.width,
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          DateFormat.Hm()
+                                              .format(alarm.alarmDateTime!)
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineLarge),
+                                      Text(alarm.title,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium),
+                                      Text(alarm.daysActive,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium),
+                                    ]),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Switch(
+
+                                      splashRadius: 22,
+                                      activeColor: lightColorScheme.onPrimary,
+                                        activeTrackColor: lightColorScheme.primary,
+                                        value: alarm.isActive == 1 ? true : false,
+                                        onChanged: (bool newValue) {
+                                          setState(() {
+                                            alarm.isActive = newValue == true ? 1 : 0;
+                                            DatabaseHelper.instance.update(alarm);
+                                          });
+                                        }),
+                                    Text('Challenges: ${alarm.difficulty}')
+                                  ],
+                                )
+                              ]
+                          )
+                      )
+                  )
+                  );
+                }).toList(),
+              );
+            }),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary,
         shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
         onPressed: () => {
+          tempAlarm = Alarm(),
+          tempAlarm.isNew = true,
           Navigator.of(context)
-              .push(MaterialPageRoute(builder: (context) => EditAlarmWidget()))
+              .push(MaterialPageRoute(
+              builder: (context) => EditAlarmWidget(tempAlarm)))
+              .then((value) {
+            setState(() {
+              //refresh the page content
+            });
+          })
         },
         tooltip: 'Add Alarm',
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
+  }
+  colorUpdate(difficulty) {
+    switch(difficulty) {
+      case 'Easy':
+        return Gradients.easy;
+      case 'Medium':
+        return   Gradients.medium;
+      case 'Hard':
+        return Gradients.hard;
+      default:
+        return Gradients.neutral; }
   }
 }

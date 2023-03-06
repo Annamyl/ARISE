@@ -1,86 +1,165 @@
-import 'CustomForm.dart';
+import 'package:arise/AlarmDatabase.dart';
+
+
+import 'color_schemes.g.dart';
+import 'data.dart';
 import 'TaskSelection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 
 class EditAlarmWidget extends StatefulWidget {
-  const EditAlarmWidget({Key? key}) : super(key: key);
+  const EditAlarmWidget(this.alarm, {super.key});
+  final Alarm alarm;
+
+  Alarm get getAlarm => alarm;
 
   @override
-  _EditAlarmWidgetState createState() => _EditAlarmWidgetState();
+  _EditAlarmWidgetState createState() => _EditAlarmWidgetState(alarm);
 }
 
 class _EditAlarmWidgetState extends State<EditAlarmWidget> {
+  final Alarm alarmInfo;
+  _EditAlarmWidgetState(this.alarmInfo);
+
+  late String title = alarmInfo.title;
+  late String daysActive = alarmInfo.daysActive;
+  late DateTime? alarmDateTime = alarmInfo.alarmDateTime;
+  late String ringtone = alarmInfo.ringtone;
+  late String difficulty = alarmInfo.difficulty;
+  late int vibration = alarmInfo.vibration;
+  late List<String> categories = List.from(alarmInfo.categories);
+  set setTitle(String title) {
+    this.title = title;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(15))
+        ),
+        scrolledUnderElevation: 0,
         title: const Text('Edit Alarm'),
         centerTitle: true,
-        actions: const [
+        actions: [
           IconButton(
-            onPressed: null,
-            icon: Icon(Icons.done),
+            onPressed: () {
+              setState(() {
+                Navigator.pop(context);
+                //push all the changes
+                alarmInfo.title = title;
+                alarmInfo.alarmDateTime = alarmDateTime;
+                alarmInfo.daysActive = daysActive;
+                alarmInfo.difficulty = difficulty;
+                alarmInfo.vibration = vibration;
+                alarmInfo.ringtone = ringtone;
+
+                alarmInfo.isNew
+                    ? DatabaseHelper.instance.add(alarmInfo)
+                    : DatabaseHelper.instance.update(alarmInfo);
+                // alarmInfo.categories = categories;
+              });
+            },
+            icon: const Icon(Icons.done),
             tooltip: 'Save Alarm',
           )
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.zero,
+        //padding: EdgeInsets.zero,
         children: <Widget>[
           TimePickerSpinner(
+              time: alarmDateTime,
               normalTextStyle: TextStyle(
                   fontSize: 24, color: Theme.of(context).highlightColor),
               highlightedTextStyle:
-                  TextStyle(fontSize: 24, color: Colors.white),
+                  const TextStyle(fontSize: 24, color: Colors.white),
               alignment: Alignment.center,
               is24HourMode: true,
               spacing: 50,
               itemHeight: 80,
               isForce2Digits: true,
-              onTimeChange:
-                  null /*(time) {
-                  setState(() {
-                    _dateTime = time;
-                  }
-                      */
-              ),
+              onTimeChange: (time) {
+                setState(() {
+                  alarmDateTime = time;
+                });
+              }),
           ListTile(
-              title: Text('Label'),
-              subtitle: Text('text'),
-              trailing: Icon(Icons.arrow_right),
+              title: const Text('Label'),
+              subtitle: Text(title),
+              trailing: const Icon(Icons.arrow_right),
               onTap: () {
+                var titleController = TextEditingController(text: title);
+                //titleController.addListener(() {setState(() {title = titleController.text;});});
                 showModalBottomSheet(
-                    //TODO: lift bottom sheet when keyboard appears
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(25),
-                            topRight: Radius.circular(25))),
-                    context: context,
-                    builder: (context) => Padding(
-                        padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom),
-                        child: SizedBox(
-                          height: 300,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Text(
-                                  'Add alarm label',
-                                  style:
-                                      Theme.of(context).textTheme.headlineSmall,
-                                ),
-                                const MyCustomForm(),
-                              ],
-                            ),
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(25),
+                          topRight: Radius.circular(25))),
+                  context: context,
+                  builder: (context) => Padding(
+                    padding: MediaQuery.of(context).viewInsets,
+                    //child: SizedBox(
+                    //height: 300,
+                    //child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(left: 30, right: 30),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          const SizedBox(height: 50),
+                          Text(
+                            'Add alarm label',
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                        )));
+                          TextFormField(
+                            controller: titleController,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 16.0, horizontal: 16.0),
+                                child: ElevatedButton(
+                                  //style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).errorColor),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 16.0, horizontal: 16.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      title = titleController.text;
+                                    });
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('OK'),
+                                ),
+                              )
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
               }),
           const Divider(),
           ListTile(
               title: Text('Alarm Sound'),
-              subtitle: Text('text'),
+              subtitle: Text(ringtone),
               trailing: Icon(Icons.arrow_right),
               onTap: () {
                 showModalBottomSheet(
@@ -91,19 +170,29 @@ class _EditAlarmWidgetState extends State<EditAlarmWidget> {
                     context: context,
                     builder: (BuildContext context) {
                       return SizedBox(
-                          height: 250,
-                          child: ListView(
-                              padding: const EdgeInsets.only(
-                                  left: 0, right: 0, top: 16),
-                              children: List.generate(15, (index) {
-                                return ListTile(title: Text('Item $index'));
-                              })));
+                          //height: 250,
+                          child: ListView.builder(
+                              //padding: EdgeInsets.zero,
+                              //children: alarms.map((alarm) {
+                              itemCount: ringtones.length,
+                              itemBuilder: (context, index) {
+                                final name = ringtones[index];
+                                return ListTile(
+                                  title: Text(name),
+                                  onTap: () {
+                                    setState(() {
+                                      ringtone = name;
+                                      Navigator.of(context).pop();
+                                    });
+                                  },
+                                );
+                              }));
                     });
               }),
           const Divider(),
           ListTile(
               title: Text('Repeat'),
-              subtitle: Text('text'),
+              subtitle: Text(alarmInfo.daysActive),
               trailing: Icon(Icons.arrow_right),
               onTap: () {
                 showModalBottomSheet(
@@ -121,19 +210,40 @@ class _EditAlarmWidgetState extends State<EditAlarmWidget> {
                                 left: 0, right: 0, top: 16),
                             children: [
                               ListTile(
-                                title: Text("Once"),
-                                onTap: () {},
+                                title: const Text("Once"),
+                                onTap: () {
+                                  setState(() {
+                                    alarmInfo.daysActive = 'Once';
+                                    Navigator.pop(context);
+                                  });
+                                },
                               ),
                               ListTile(
-                                title: Text("Daily"),
-                                onTap: () {},
+                                title: const Text("Daily"),
+                                onTap: () {
+                                  setState(() {
+                                    alarmInfo.daysActive = "Daily";
+                                        // Days.getFormatted(
+                                        // [0, 1, 2, 3, 4, 5, 6],
+                                        // compact: true);
+                                    Navigator.pop(context);
+                                  });
+                                },
                               ),
                               ListTile(
-                                title: Text("Monday to Friday"),
-                                onTap: () {},
+                                title: const Text("Monday to Friday"),
+                                onTap: () {
+                                  setState(() {
+                                    alarmInfo.daysActive = "Monday to Friday";
+                                        //Days.getFormatted(
+                                        //[1, 2, 3, 4, 5],
+                                        //compact: true);
+                                    Navigator.pop(context);
+                                  });
+                                },
                               ),
                               ListTile(
-                                title: Text("Custom"),
+                                title: const Text("Custom"),
                                 onTap: () {},
                               )
                             ],
@@ -142,15 +252,46 @@ class _EditAlarmWidgetState extends State<EditAlarmWidget> {
               }),
           const Divider(),
           ListTile(
-              title: Text('Challenges'),
-              subtitle: Text('text'),
-              trailing: Icon(Icons.arrow_right),
-              onTap: () => {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => TaskSelectionWidget()))
-                  })
+              title: const Text('Challenges'),
+              subtitle: Text(difficulty),
+              trailing: const Icon(Icons.arrow_right),
+              onTap: () {
+                Wrapper w = Wrapper();
+                w.difficulty = difficulty;
+                w.categories = categories;
+                Navigator.of(context)
+                    .push(MaterialPageRoute(
+                        builder: (context) => TaskSelectionWidget(w)))
+                    .then((value) {
+                  setState(() {
+                    categories = w.categories;
+                    difficulty = w.difficulty;
+                  });
+                });
+              }),
+          const Divider(),
+          ListTile(
+            title: const Text('Vibration'),
+            trailing: Switch(
+              activeColor: lightColorScheme.onPrimary,
+              activeTrackColor: lightColorScheme.primary,
+              value: vibration == 1 ? true : false,
+              onChanged: (bool value) {
+                setState(() {
+                  vibration = value ? 1 : 0;
+                });
+              },
+            ),
+          )
         ],
       ),
     );
   }
+}
+
+//used to pass by reference objects that are normally passed by value
+//can be expanded to contain other stuff too
+class Wrapper {
+  String difficulty = '';
+  List<String> categories = [];
 }

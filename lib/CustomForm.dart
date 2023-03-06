@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 
 
-class MyCustomForm extends StatefulWidget {
-  const MyCustomForm({super.key});
+class CustomForm extends StatefulWidget {
+  const CustomForm(this.formController, {super.key});
+  final TextEditingController formController;
 
   @override
-  MyCustomFormState createState() {
-    return MyCustomFormState();
+  CustomFormState createState() {
+    return CustomFormState(formController);
   }
 }
 
 // Create a corresponding State class.
 // This class holds data related to the form.
-class MyCustomFormState extends State<MyCustomForm> {
+class CustomFormState extends State<CustomForm> {
+  // Create a text controller and use it to retrieve the current value
+  // of the TextField.
+  //final FormController = TextEditingController();
+  CustomFormState(this.formController);
+  final TextEditingController formController;
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    formController.dispose();
+    super.dispose();
+  }
   // Create a global key that uniquely identifies the Form widget
   // and allows validation of the form.
   //
@@ -27,6 +40,7 @@ class MyCustomFormState extends State<MyCustomForm> {
         key: _formKey,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           TextFormField(
+            controller: formController,
             // The validator receives the text that the user has entered.
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -41,8 +55,8 @@ class MyCustomFormState extends State<MyCustomForm> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).errorColor),
                   onPressed: () {
+                    formController.dispose();
                     Navigator.of(context).pop();
                   },
                   child: const Text('Cancel'),
@@ -59,6 +73,7 @@ class MyCustomFormState extends State<MyCustomForm> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Processing Data')),
                       );
+                      Navigator.pop(context);
                     }
                   },
                   child: const Text('OK'),

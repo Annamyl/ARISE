@@ -1,15 +1,23 @@
+import 'package:flutter/services.dart';
+import 'color_schemes.g.dart';
 import 'package:arise/TitleScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
-  runApp(MyApp());
+  //Entire app locked in portrait mode
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown])
+      .then((_) {
+    runApp(new MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
-  var themeData = ThemeData(
 
+  const MyApp({Key? key}) : super(key: key);
+
+  /*
+  var themeData = ThemeData(
     appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent
     ),
@@ -41,7 +49,6 @@ class MyApp extends StatelessWidget {
 
 
     fontFamily: 'Inter',
-    // TODO: put heights if it works.
     textTheme: const TextTheme(
         headlineLarge: TextStyle(fontSize: 32.0),
         headlineMedium: TextStyle(fontSize: 28.0),
@@ -63,24 +70,39 @@ class MyApp extends StatelessWidget {
     ),
   );
 
+   */
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ARISE!',
-      theme: themeData,//(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-
-      //),
+      theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: darkColorScheme,
+        fontFamily: 'Inter',
+        // TODO: put heights if it works.
+        textTheme: const TextTheme(
+        headlineLarge: TextStyle(fontSize: 32.0, height: 1.5),
+        headlineMedium: TextStyle(fontSize: 28.0),
+        headlineSmall: TextStyle(fontSize: 24.0),   // headline small
+        bodyLarge: TextStyle(fontSize: 16.0),
+        bodyMedium: TextStyle(fontSize: 14.0),
+        bodySmall: TextStyle(fontSize: 12.0),
+        labelLarge: TextStyle(fontSize: 14.0),
+        labelMedium: TextStyle(fontSize: 12.0),
+        labelSmall: TextStyle(fontSize: 11.0),
+        displayLarge: TextStyle(fontSize: 57.0),
+        displayMedium: TextStyle(fontSize: 45.0),
+        displaySmall: TextStyle(fontSize: 36.0),
+        // display extra large cant be defined rn, probably needs to be custom
+        titleLarge: TextStyle(fontSize: 22.0),//, height: 28.0),
+        titleMedium: TextStyle(fontSize: 16.0),
+        titleSmall: TextStyle(fontSize: 14.0)
+      ),
+      ),
       home: TitleScreen(),
+
     );
   }
 }
